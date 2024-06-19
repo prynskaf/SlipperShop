@@ -16,15 +16,22 @@ export const createAddress = async (req: Request, res: Response) => {
   }
 };
 
+
 export const getAddressesByUser = async (req: Request, res: Response) => {
-  const userId = parseInt(req.User.id);
+  const userId = req.User.id; // Assuming req.User contains the authenticated user's information
+  console.log(userId);
+  // const userId = 2;
+
   try {
     const result = await pool.query<Address[]>('SELECT * FROM addresses WHERE user_id = $1', [userId]);
     res.json(result.rows);
   } catch (err: any) {
+    console.error('Database error:', err);
     res.status(500).json({ error: err.message });
   }
 };
+
+
 
 export const updateAddress = async (req: Request, res: Response) => {
   const addressId = parseInt(req.params.id);

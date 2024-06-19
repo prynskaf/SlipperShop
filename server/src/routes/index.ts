@@ -3,7 +3,7 @@ import { createOrder, deleteOrder, getOrderById, getOrders, updateOrder } from '
 import { createProduct, deleteProduct, getProductById, getProducts, updateProduct } from '../controllers/productController';
 import { createReview, deleteReview, getReviewsByProduct, updateReview } from '../controllers/reviewController';
 import { getPaymentById, getPayments, processPayment } from '../controllers/paymentController';
-import { getUser, loginUser, logoutUser, registerUser } from '../controllers/userController';
+import { deleteUser, getAllUsers, getUser, loginUser, logoutUser, registerUser, updateUser } from '../controllers/userController';
 import { deleteUserAccount, getUserSettings, updateUserSettings } from '../controllers/settingsController';
 import { createAddress, deleteAddress, getAddressesByUser, updateAddress } from '../controllers/addressController'; // Import address controller
 import { createCategory, deleteCategory, getCategories, updateCategory } from '../controllers/categoryController'; // Import category controllers
@@ -17,8 +17,13 @@ const router = express.Router();
 // Authentication routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+
+// Authenticated routes
 router.post('/logout', authenticateToken, logoutUser);
-router.get('/users', getUser);
+router.get('/users/:id', authenticateToken, getUser);
+router.put('/users/:id', authenticateToken, updateUser);
+router.delete('/users/:id', authenticateToken, deleteUser);
+router.get('/users', authenticateToken, getAllUsers);
 
 // Product routes
 router.get('/products', getProducts);
@@ -35,9 +40,9 @@ router.put('/orders/:id', authenticateToken, updateOrder);
 router.delete('/orders/:id', authenticateToken, deleteOrder);
 
 // User settings routes
-router.get('/settings', authenticateToken, getUserSettings);
-router.put('/settings', authenticateToken, updateUserSettings);
-router.delete('/settings', authenticateToken, deleteUserAccount);
+router.get('/settings/:id', authenticateToken, getUserSettings);
+router.put('/settings/:id', authenticateToken, updateUserSettings);
+router.delete('/settings/:id', authenticateToken, deleteUserAccount);
 
 // Review routes
 router.get('/products/:productId/reviews', getReviewsByProduct);
@@ -57,10 +62,14 @@ router.put('/addresses/:id', authenticateToken, updateAddress);
 router.delete('/addresses/:id', authenticateToken, deleteAddress);
 
 // Product size routes
-router.get('/products/:productId/sizes', authenticateToken, getProductSizes);
-router.post('/products/:productId/sizes', authenticateToken, addProductSize);
-router.put('/product-sizes/:id', authenticateToken, updateProductSize);
-router.delete('/product-sizes/:id', authenticateToken, deleteProductSize);
+// POST /api/products/:productId/sizes - Add a product size (requires authentication)
+router.post('/:productId/sizes', authenticateToken, addProductSize);
+// GET /api/products/:productId/sizes - Get all product sizes by productId
+router.get('/:productId/sizes', getProductSizes);
+// PUT /api/products/sizes/:id - Update a product size by id (requires authentication)
+router.put('/sizes/:id', authenticateToken, updateProductSize);
+// DELETE /api/products/sizes/:id - Delete a product size by id (requires authentication)
+router.delete('/sizes/:id', authenticateToken, deleteProductSize);
 
 // Category routes
 router.get('/categories', getCategories);
@@ -69,9 +78,9 @@ router.put('/categories/:id', authenticateToken, updateCategory);
 router.delete('/categories/:id', authenticateToken, deleteCategory);
 
 // Order item routes
-router.post('/orders/:orderId/items', authenticateToken, addOrderItem);
-router.get('/orders/:orderId/items', authenticateToken, getOrderItemsByOrder);
-router.put('/order-items/:id', authenticateToken, updateOrderItem);
-router.delete('/order-items/:id', authenticateToken, deleteOrderItem);
+router.post('/orders/:orderId/order_items', addOrderItem);
+router.get('/orders/:orderId/order_items', getOrderItemsByOrder);
+router.put('/order_items/:id', updateOrderItem);
+router.delete('/order_items/:id', deleteOrderItem);
 
 export default router;

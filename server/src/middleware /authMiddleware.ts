@@ -10,15 +10,22 @@ declare global {
   }
 }
 
-const secret = 'your_jwt_secret';
+const secret = process.env.JWT_SECRET || '12345';
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers['authorization'];
-  if (!token) return res.status(401).json({ error: 'Access denied' });
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Extract token from Authorization header
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access denied: Missing token' });
+  }
 
   jwt.verify(token, secret, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
-    req.User = user;
+    if (err) {
+      console.error('JWT verification error:', err);
+      return res.status(403).json({ error: 'Access denied: Invalid token' });
+    }
+    req.User = user; // Attach user information to the request object for use in subsequent middleware or route handlers
     next();
   });
 };
