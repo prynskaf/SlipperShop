@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 declare global {
   namespace Express {
     interface Request {
-      User?: any; // Define the type of 'User' as needed
+      User?: any; // Using 'any' for the User property
     }
   }
 }
@@ -25,9 +25,20 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
       console.error('JWT verification error:', err);
       return res.status(403).json({ error: 'Access denied: Invalid token' });
     }
-    req.User = user; // Attach user information to the request object for use in subsequent middleware or route handlers
+    req.User = user; // Attach user information to the request object
     next();
   });
 };
+
+
+
+// Middleware to check if the authenticated user is an admin
+export const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.User || req.User.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied: Admins only' });
+  }
+  next();
+};
+
 
 export default authenticateToken;

@@ -9,12 +9,12 @@ const secret = process.env.JWT_SECRET || '12345';
 
 // register user
 export const registerUser = async (req: Request, res: Response) => {
-  const { username, email, password, firstName, lastName, phoneNumber }: RegistrationRequest = req.body;
+  const { username, email, password, firstName, lastName, phoneNumber, role }: RegistrationRequest = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const result = await pool.query<User>(
-      'INSERT INTO users (username, email, password, first_name, last_name, phone_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, username, email, first_name, last_name, phone_number',
-      [username, email, hashedPassword, firstName, lastName, phoneNumber]
+      'INSERT INTO users (username, email, password, first_name, last_name, phone_number, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, username, email, first_name, last_name, phone_number, role',
+      [username, email, hashedPassword, firstName, lastName, phoneNumber, role || 'user']
     );
     const newUser = result.rows[0];
     res.status(201).json(newUser);
@@ -32,7 +32,11 @@ export const loginUser = async (req: Request, res: Response) => {
     if (user) {
       const passwordMatch = await bcrypt.compare(password, user.password);
       if (passwordMatch) {
-        const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '1h' });
+        const token = jwt.sign(
+          { id: user.id, email: user.email, role: user.role },
+          secret,
+          { expiresIn: '1h' }
+        );
         res.status(200).json({ message: 'Login successful', token });
       } else {
         res.status(401).json({ error: 'Invalid email or password' });
@@ -45,28 +49,29 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
+
 export const logoutUser = async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Logout successful' });
 };
 
 
    // get all users
-export const getAllUsers = async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query<User>('SELECT id, username, email, first_name, last_name, phone_number FROM users');
-    const users = result.rows;
-    // console.log(`Fetched users: ${JSON.stringify(users)}`);
-    if (users.length > 0) {
-      res.status(200).json(users);
-    } else {
-      res.status(404).json({ error: 'No users found' });
+   export const getAllUsers = async (req: Request, res: Response) => {
+    try {
+      const result = await pool.query<User>(
+        'SELECT id, username, email, first_name AS "firstName", last_name AS "lastName", phone_number AS "phoneNumber", role FROM users'
+      );
+      const users = result.rows;
+      if (users.length > 0) {
+        res.status(200).json(users);
+      } else {
+        res.status(404).json({ error: 'No users found' });
+      }
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
+  };
+  
 
 // get user by id
 export const getUser = async (req: Request, res: Response) => {

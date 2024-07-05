@@ -18,6 +18,7 @@ const pool = new Pool({
 
 app.use(express.json());
 
+
 // ROUTES
 app.use('/api', router);
 

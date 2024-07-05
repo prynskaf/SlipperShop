@@ -52,6 +52,7 @@
     firstName: string;
     lastName: string;
     phoneNumber: string;
+    role: string; // user role or admin role
   }
   
   export interface RegistrationRequest {
@@ -61,7 +62,8 @@
     firstName: string;
     lastName: string;
     phoneNumber: string;
-  }
+    role?: string;  // Optional role field  use role or admin role
+  }  
   
   export interface LoginRequest {
     email: string;

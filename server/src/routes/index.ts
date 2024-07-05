@@ -8,7 +8,7 @@ import { deleteUserAccount, getUserSettings, updateUserSettings } from '../contr
 import { createAddress, deleteAddress, getAddressesByUser, updateAddress } from '../controllers/addressController'; // Import address controller
 import { createCategory, deleteCategory, getCategories, updateCategory } from '../controllers/categoryController'; // Import category controllers
 import { addOrderItem, deleteOrderItem, getOrderItemsByOrder, updateOrderItem } from '../controllers/orderItemController'; // Import order item controllers
-import authenticateToken from '../middleware /authMiddleware';
+import authenticateToken, { authenticateAdmin } from '../middleware /authMiddleware';
 import { addProductSize, deleteProductSize, getProductSizes, updateProductSize } from '../controllers/productSizeController';
 
 
@@ -19,11 +19,13 @@ router.post('/register', registerUser);
 router.post('/login', loginUser);
 
 // Authenticated routes
+// Authenticated routes without admin restrictions
 router.post('/logout', authenticateToken, logoutUser);
 router.get('/users/:id', authenticateToken, getUser);
 router.put('/users/:id', authenticateToken, updateUser);
 router.delete('/users/:id', authenticateToken, deleteUser);
 router.get('/users', authenticateToken, getAllUsers);
+
 
 // Product routes
 router.get('/products', getProducts);
@@ -82,5 +84,24 @@ router.post('/orders/:orderId/order_items', addOrderItem);
 router.get('/orders/:orderId/order_items', getOrderItemsByOrder);
 router.put('/order_items/:id', updateOrderItem);
 router.delete('/order_items/:id', deleteOrderItem);
+
+
+
+// User management routes (Admin only)
+router.get('/admin/users', authenticateToken, authenticateAdmin, getAllUsers);
+router.get('/admin/users/:id', authenticateToken, authenticateAdmin, getUser);
+router.put('/admin/users/:id', authenticateToken, authenticateAdmin, updateUser);
+router.delete('/admin/users/:id', authenticateToken, authenticateAdmin, deleteUser);
+
+
+
+
+// Order management routes (Admin only)
+router.get('/admin/orders', authenticateToken, authenticateAdmin, getOrders);
+router.get('/admin/orders/:id', authenticateToken, authenticateAdmin, getOrderById);
+router.post('/admin/orders', authenticateToken, authenticateAdmin, createOrder);
+router.put('/admin/orders/:id', authenticateToken, authenticateAdmin, updateOrder);
+router.delete('/admin/orders/:id', authenticateToken, authenticateAdmin, deleteOrder);
+
 
 export default router;
