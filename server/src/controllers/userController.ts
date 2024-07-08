@@ -3,26 +3,34 @@ import { pool } from '../index';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User, RegistrationRequest, LoginRequest, UpdateUserRequest } from '../types';
+import { sendEmail } from '../utils/emailService';
 
 const saltRounds = 10;
 const secret = process.env.JWT_SECRET || '12345';
 
-// register user
+/// Register user
 export const registerUser = async (req: Request, res: Response) => {
   const { username, email, password, firstName, lastName, phoneNumber, role }: RegistrationRequest = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const result = await pool.query<User>(
+    const result = await pool.query(
       'INSERT INTO users (username, email, password, first_name, last_name, phone_number, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, username, email, first_name, last_name, phone_number, role',
       [username, email, hashedPassword, firstName, lastName, phoneNumber, role || 'user']
     );
     const newUser = result.rows[0];
+
+    // Send registration confirmation email
+    try {
+      await sendEmail(email, 'Welcome to Our Service', `Hello ${username}, welcome to our service!`);
+    } catch (emailError) {
+      console.error('Error sending registration email:', emailError);
+    }
+
     res.status(201).json(newUser);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 };
-
 // login user
 export const loginUser = async (req: Request, res: Response) => {
   const { email, password }: LoginRequest = req.body;
@@ -116,9 +124,26 @@ export const updateUser = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   const userId = req.params.id;
   try {
-    const result = await pool.query<User>('DELETE FROM users WHERE id = $1 RETURNING id', [userId]);
+    // Query to delete the user and return the deleted user info with correct mapping
+    const result = await pool.query<User>(
+      `DELETE FROM users 
+       WHERE id = $1 
+       RETURNING id, email, first_name AS "firstName", last_name AS "lastName"`, 
+       [userId]
+    );
     const deletedUser = result.rows[0];
+
     if (deletedUser) {
+      // Send email notification to the user's email
+      try {
+        const emailSubject = 'Account Deletion Confirmation';
+        const emailText = `Dear ${deletedUser.firstName} ${deletedUser.lastName},\n\nYour account has been successfully deleted from our system. If you have any questions, please contact our support team.\n\nBest regards,\nYour Company Name`;
+        await sendEmail(deletedUser.email, emailSubject, emailText);
+        console.log('Account deletion email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending account deletion email:', emailError);
+      }
+
       res.status(200).json({ message: 'User deleted successfully' });
     } else {
       res.status(404).json({ error: 'User not found' });
